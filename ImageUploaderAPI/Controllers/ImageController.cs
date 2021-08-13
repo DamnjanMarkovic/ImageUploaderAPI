@@ -99,6 +99,7 @@ namespace ImageUploaderAPI.Controllers
         [RequestFormLimits(MultipartBodyLengthLimit = 104857600)]
         public async Task<ActionResult<ImageModel>> PostImageModel(List<IFormFile> iFormFiles)
         {
+            
             string returning = "";
             foreach (var iFormFile in iFormFiles)
             {
@@ -114,11 +115,8 @@ namespace ImageUploaderAPI.Controllers
                     
                     imageModel.ImageName = await SaveImage(iFormFile);
                     _context.Images.Add(imageModel);
-                    await _context.SaveChangesAsync();
-                    
-                }
-
-                
+                    await _context.SaveChangesAsync();                    
+                }                
             }
 
             if (!string.IsNullOrEmpty(returning))
@@ -126,7 +124,7 @@ namespace ImageUploaderAPI.Controllers
                 return new ContentResult
                 {
                     StatusCode = 201,
-                    Content = $"Image ${returning} already exists!",
+                    Content = $"Image {returning} already exists!",
                     ContentType = "text/plain"
                 };
             }
@@ -134,7 +132,6 @@ namespace ImageUploaderAPI.Controllers
             {
                 return Ok(201);
             }
-            
         }
 
         private bool ImageWithThatNameExists(string imageName)
