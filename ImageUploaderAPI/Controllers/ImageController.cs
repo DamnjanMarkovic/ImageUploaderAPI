@@ -92,30 +92,49 @@ namespace ImageUploaderAPI.Controllers
             return NoContent();
         }
 
-        // POST: api/Image
-        // To protect from overposting attacks, enable the specific properties you want to bind to, for
-        // more details, see https://go.microsoft.com/fwlink/?linkid=2123754.
+        
+
+
         [HttpPost]
         [RequestFormLimits(MultipartBodyLengthLimit = 104857600)]
-        public async Task<ActionResult<ImageModel>> PostImageModel([FromForm] ImageModel imageModel)
+        public async Task<ActionResult<ImageModel>> PostImageModel(List<IFormFile> iFormFiles)
         {
+            string returning = "";
+            foreach (var iFormFile in iFormFiles)
+            {
+                ImageModel imageModel = new ImageModel();
+                
 
-            if ( ImageWithThatNameExists(imageModel.ImageFile.FileName))
+                if (ImageWithThatNameExists(iFormFile.FileName))
+                {
+                    returning = iFormFile.FileName;
+                }
+                else
+                {
+                    
+                    imageModel.ImageName = await SaveImage(iFormFile);
+                    _context.Images.Add(imageModel);
+                    await _context.SaveChangesAsync();
+                    
+                }
+
+                
+            }
+
+            if (!string.IsNullOrEmpty(returning))
             {
                 return new ContentResult
                 {
                     StatusCode = 201,
-                    Content = $"Image already exists!",
+                    Content = $"Image ${returning} already exists!",
                     ContentType = "text/plain"
                 };
             }
             else
             {
-                imageModel.ImageName = await SaveImage(imageModel.ImageFile);
-                _context.Images.Add(imageModel);
-                await _context.SaveChangesAsync();
-                return StatusCode(201);
+                return Ok(201);
             }
+            
         }
 
         private bool ImageWithThatNameExists(string imageName)
@@ -154,8 +173,7 @@ namespace ImageUploaderAPI.Controllers
         [NonAction]
         public async Task<string> SaveImage(IFormFile imageFile)
         {
-            //string imageName = new String(Path.GetFileNameWithoutExtension(imageFile.FileName).Take(10).ToArray()).Replace(' ', '-');
-            //imageName = imageName + DateTime.Now.ToString("yymmssfff") + Path.GetExtension(imageFile.FileName);
+
             var imagePath = Path.Combine(_hostEnvironment.ContentRootPath, "Images", imageFile.FileName);
             using (var fileStream = new FileStream(imagePath, FileMode.Create))
             {
